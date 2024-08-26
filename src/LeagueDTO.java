@@ -7,6 +7,10 @@ public class LeagueDTO {
     private List<MatchDTO> matches;
 
     // Constructor
+
+    public LeagueDTO() {
+    }
+
     public LeagueDTO(List<String> teamNames, List<MatchDTO> matches) {
         this.teamNames = teamNames;
         this.matches = matches;

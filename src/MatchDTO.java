@@ -8,6 +8,11 @@ public class MatchDTO {
     private int awayScore;
 
     // Constructor
+
+    public MatchDTO() {
+    }
+
+
     public MatchDTO(String homeTeamName, String awayTeamName, int homeScore, int awayScore) {
         this.homeTeamName = homeTeamName;
         this.awayTeamName = awayTeamName;

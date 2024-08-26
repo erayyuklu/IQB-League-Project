@@ -13,6 +13,7 @@ public class Match {
         this.homeScore = 0;
         this.awayScore = 0;
     }
+
     // Method to simulate a match and determine the winner
     public void simulateMatch() {
         homeScore = (byte)(Math.random() * 11); // 0-10 range for home team
