@@ -1,13 +1,16 @@
 package com.iqb.league;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import lombok.Data;
 
 @Data
 public class League {
     private List<Team> teams;
-    private List<Match> fixtures;
+    private List<List<Match>> fixtures;
 
     //Constructor
     public League(List<Team> teams) {
@@ -20,22 +23,60 @@ public class League {
 
 
     // Method to generate fixtures based on the teams
-    private List<Match> generateFixtures(List<Team> teams) {
+    public List<List<Match>> generateFixtures(List<Team> teams) {
         int numberOfTeams = teams.size();
-        int numberOfMatches=numberOfTeams*(numberOfTeams-1)/2;
-        int k=0;
-        List<Match> matches = new ArrayList<>();
-        List<List<Integer>> pairs = new ArrayList<>();
+        int numberOfRounds = numberOfTeams - 1; // Toplam hafta sayısı
+        int matchesPerRound = numberOfTeams / 2; // Her hafta oynanan maç sayısı
+        List<List<Match>> rounds = new ArrayList<>(); // Fikstürü tutacak liste
 
-        while(k<numberOfMatches){
-            int rand1 = (int)(Math.random() * numberOfTeams);
-            int rand2 = (int)(Math.random() * numberOfTeams);
-            if(rand1 != rand2 && !pairs.contains(List.of(rand1, rand2)) && !pairs.contains(List.of(rand2, rand1))){
-                pairs.add(List.of(rand1,rand2));
-                matches.add(new Match(teams.get(rand1),teams.get(rand2)));
-                k++;
-            }
+        // Takımları dizelim, ilk takım sabit kalacak
+        List<Team> rotatedTeams = new ArrayList<>(teams);
+
+        // Takımların son oynadığı maçın ev-deplasman durumunu tutalım (true = ev sahibi, false = deplasman)
+        Map<Team, Boolean> lastHomeAwayStatus = new HashMap<>();
+        for (Team team : teams) {
+            lastHomeAwayStatus.put(team, true); // İlk hafta her takım ev sahibi olabilir
         }
-        return matches;
+
+        // İlk hafta fikstürü
+        for (int round = 0; round < numberOfRounds; round++) {
+            List<Match> currentRound = new ArrayList<>();
+
+            // Her hafta için maçları oluştur
+            for (int matchIndex = 0; matchIndex < matchesPerRound; matchIndex++) {
+                Team homeTeam = rotatedTeams.get(matchIndex);
+                Team awayTeam = rotatedTeams.get(numberOfTeams - 1 - matchIndex);
+
+                // Son hafta ev sahibi/deplasman olma durumuna göre takım rollerini değiştir
+                if (!lastHomeAwayStatus.get(homeTeam)) {
+                    // Eğer homeTeam önceki hafta deplasmandaysa, bu hafta ev sahibi olabilir
+                    currentRound.add(new Match(homeTeam, awayTeam));
+                    lastHomeAwayStatus.put(homeTeam, true);
+                    lastHomeAwayStatus.put(awayTeam, false);
+                } else if (!lastHomeAwayStatus.get(awayTeam)) {
+                    // Eğer awayTeam önceki hafta deplasmandaysa, bu hafta ev sahibi olabilir
+                    currentRound.add(new Match(awayTeam, homeTeam));
+                    lastHomeAwayStatus.put(awayTeam, true);
+                    lastHomeAwayStatus.put(homeTeam, false);
+                } else {
+                    // Eğer her iki takım da geçen hafta ev sahibi olmuşsa, random bir takımın ev sahibi olmasını sağlayabiliriz
+                    currentRound.add(new Match(homeTeam, awayTeam)); // Varsayılan sıralama
+                    lastHomeAwayStatus.put(homeTeam, true);
+                    lastHomeAwayStatus.put(awayTeam, false);
+                }
+            }
+
+            rounds.add(currentRound);
+
+            // Her hafta sonunda takımları saat yönünde döndür (ilk takım hariç)
+            Team lastTeam = rotatedTeams.remove(rotatedTeams.size() - 1);
+            rotatedTeams.add(1, lastTeam);
+        }
+
+        return rounds;
     }
+
+
+
+
 }

@@ -2,14 +2,18 @@ package com.iqb.league;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class Team {
+    private int id;
     private String name;
     private short foundationYear;
-    private String[] colors;
-    private int overallScore; //overallScore can be very high while we have a lot of matches. It is not a good idea to keep it as a byte or short type.
+    private List<Color> colors; // Use Color array for consistent representation
+    private int overallScore;
+
     // Constructor
-    public Team(String name, short foundationYear, String[] colors) {
+    public Team(String name, short foundationYear, List<Color>  colors) {
         this.name = name;
         this.foundationYear = foundationYear;
         this.colors = colors;

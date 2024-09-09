@@ -4,14 +4,11 @@ import lombok.Data;
 
 @Data
 public class TeamDTO {
+    private int id;
     private String name;
     private short foundationYear;
-    private String[] colors;
+    private String[] colors; // Renkler dizisi olarak tanımlandı
     private int overallScore;
-
-    // (no-argument constructor)
-    public TeamDTO() {
-    }
 
     // Parametreli yapıcı metod
     public TeamDTO(String name, short foundationYear, String[] colors) {
@@ -19,5 +16,9 @@ public class TeamDTO {
         this.foundationYear = foundationYear;
         this.colors = colors;
         this.overallScore = 0;
+    }
+
+    public TeamDTO() {
+
     }
 }
