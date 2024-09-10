@@ -8,6 +8,14 @@ import java.util.List;
 import java.util.Scanner;
 
 public class Main {
+    public static final String RESET = "\u001B[0m";
+    public static final String RED = "\u001B[31m";
+    public static final String GREEN = "\u001B[32m";
+    public static final String YELLOW = "\u001B[33m";
+    public static final String BLUE = "\u001B[34m";
+    public static final String PURPLE = "\u001B[35m";
+    public static final String HIGHLINE= "\u001B[4m";
+
     private Connection connection;
 
     public Main(Connection connection) {
@@ -26,12 +34,14 @@ public class Main {
             int choice = 0;
 
             while (choice != -1) {
-                System.out.println("Choose an option:");
-                System.out.println("(1) Show teams in database");
-                System.out.println("(2) Add/delete teams");
-                System.out.println("(3) Create fixture with teams in database");
-                System.out.println("(4) Start the league with current teams");
-                System.out.println("Enter your choice (or -1 to exit):");
+
+                System.out.println("Choose an option:" + PURPLE + HIGHLINE);
+                System.out.println("(1) Show teams in database" + GREEN);
+                System.out.println("(2) Add a team into database" + RED);
+                System.out.println("(3) Delete a team from database" + YELLOW);
+                System.out.println("(4) Create fixture with teams in database" + BLUE);
+                System.out.println("(5) Start the league with current teams" + RESET);
+                System.out.println("Enter your choice (or -1 to exit):" + RESET);
 
                 choice = scanner.nextInt();
 
@@ -56,10 +66,27 @@ public class Main {
                         mainApp.addTeam(modelMapper, new TeamDTO(name, foundationYear, colors));
                         break;
                     case 3:
-                        // Implement case 3
+                        System.out.println("Enter the ID of the team you want to delete:");
+                        int teamId = scanner.nextInt();
+                        mainApp.deleteTeam(teamId);
+
                         break;
                     case 4:
-                        // Implement case 4
+                        TeamService teamService = new TeamService();
+                        List<TeamDTO> teamDTOs =teamService.takeTeams();
+                        List<Team> teams = teamService.convertToTeams(teamDTOs);
+                        League league = new League(teams);
+                        List<List<Match>> fixtures =league.getFixtures();
+                        for (int i = 0; i < fixtures.size(); i++) {
+                            System.out.println("Week " + (i + 1) + ":");
+                            for (Match match : fixtures.get(i)) {
+                                System.out.println(match.getHomeTeam().getName() + " vs. " + match.getAwayTeam().getName());
+                            }
+                            System.out.println();
+                        }
+
+
+
                         break;
                     case -1:
                         System.out.println("Exiting...");
@@ -181,6 +208,49 @@ public class Main {
             }
         }
     }
+
+    public void deleteTeam(int teamId) {
+        PreparedStatement preparedStatement = null;
+        Connection connection = null;
+
+        try {
+            // Veritabanına bağlantı kurun
+            connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/mydatabase", "postgres", "12345");
+
+            // İlk olarak, takım ile ilişkili renkleri silin (team_colors tablosu)
+            String deleteColorsSql = "DELETE FROM team_colors WHERE team_id = ?";
+            preparedStatement = connection.prepareStatement(deleteColorsSql);
+            preparedStatement.setInt(1, teamId);
+            preparedStatement.executeUpdate();
+
+            // Ardından, takımı silin (teams tablosu)
+            String deleteTeamSql = "DELETE FROM public.teams WHERE id = ?";
+            preparedStatement = connection.prepareStatement(deleteTeamSql);
+            preparedStatement.setInt(1, teamId);
+            int affectedRows = preparedStatement.executeUpdate();
+
+            // Eğer silme işlemi başarılıysa, silinen takım sayısını kontrol edin
+            if (affectedRows > 0) {
+                System.out.println("Takım başarıyla silindi.");
+            } else {
+                System.out.println("Belirtilen ID'ye sahip bir takım bulunamadı.");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (preparedStatement != null) preparedStatement.close();
+                if (connection != null) connection.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+
+
 
 
     public int addColor(String colorName) throws SQLException {

@@ -1,7 +1,20 @@
 package com.iqb.league;
-import lombok.Data;
 
-@Data
 public class Color {
-    private int id;
-    private String colorName;}
+    private String colorName;
+
+    // Constructor
+    public Color(String colorName) {
+        this.colorName = colorName;
+    }
+
+    // Getter
+    public String getColorName() {
+        return colorName;
+    }
+
+    // Setter
+    public void setColorName(String colorName) {
+        this.colorName = colorName;
+    }
+}

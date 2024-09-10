@@ -19,4 +19,7 @@ public class Team {
         this.colors = colors;
         this.overallScore = 0;
     }
+
+    public Team() {
+    }
 }
