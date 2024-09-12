@@ -10,20 +10,22 @@ import lombok.Data;
 @Data
 public class League {
     private List<Team> teams;
-    private List<List<Match>> fixtures;
+    private List<List<Match>> firstHalfFixtures;
+    private List<List<Match>> secondHalfFixtures;
 
     //Constructor
     public League(List<Team> teams) {
         List<Team> mutableTeams = new ArrayList<>(teams);//copying to an arraylist to make it mutable
         mutableTeams.sort((t1, t2) -> t1.getName().compareTo(t2.getName()));//ordering the teams by name
         this.teams = mutableTeams;
-        this.fixtures = generateFixtures(mutableTeams);
+        this.firstHalfFixtures = generateFirstHalfFixtures(mutableTeams);
+        this.secondHalfFixtures = generateSecondHalfFixtures(firstHalfFixtures);
     }
 
 
 
     // Method to generate fixtures based on the teams
-    public List<List<Match>> generateFixtures(List<Team> teams) {
+    public List<List<Match>> generateFirstHalfFixtures(List<Team> teams) {
         int numberOfTeams = teams.size();
         int numberOfRounds = numberOfTeams - 1; // Toplam hafta sayısı
         int matchesPerRound = numberOfTeams / 2; // Her hafta oynanan maç sayısı
@@ -75,6 +77,23 @@ public class League {
 
         return rounds;
     }
+
+    public List<List<Match>> generateSecondHalfFixtures(List<List<Match>> firstHalfFixtures) {
+        List<List<Match>> secondHalfFixtures = new ArrayList<>();
+
+        // İlk yarıdaki fikstürleri döngü ile gezerek ikinci yarı fikstürünü oluştur
+        for (List<Match> round : firstHalfFixtures) {
+            List<Match> secondHalfRound = new ArrayList<>();
+            for (Match match : round) {
+                // Ev sahibi ve deplasman takımlarını tersine çevir
+                secondHalfRound.add(new Match(match.getAwayTeam(), match.getHomeTeam()));
+            }
+            secondHalfFixtures.add(secondHalfRound);
+        }
+
+        return secondHalfFixtures;
+    }
+
 
 
 

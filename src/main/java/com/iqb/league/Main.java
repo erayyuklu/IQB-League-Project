@@ -76,10 +76,20 @@ public class Main {
                         List<TeamDTO> teamDTOs =teamService.takeTeams();
                         List<Team> teams = teamService.convertToTeams(teamDTOs);
                         League league = new League(teams);
-                        List<List<Match>> fixtures =league.getFixtures();
-                        for (int i = 0; i < fixtures.size(); i++) {
+                        List<List<Match>> firstHalfFixtures =league.getFirstHalfFixtures();
+                        System.out.println("First half fixtures:");
+                        for (int i = 0; i < firstHalfFixtures.size(); i++) {
                             System.out.println("Week " + (i + 1) + ":");
-                            for (Match match : fixtures.get(i)) {
+                            for (Match match : firstHalfFixtures.get(i)) {
+                                System.out.println(match.getHomeTeam().getName() + " vs. " + match.getAwayTeam().getName());
+                            }
+                            System.out.println();
+                        }
+                        List<List<Match>> secondHalfFixtures =league.getSecondHalfFixtures();
+                        System.out.println("Second half fixtures:");
+                        for (int i = 0; i < secondHalfFixtures.size(); i++) {
+                            System.out.println("Week " + (i + 1) + ":");
+                            for (Match match : secondHalfFixtures.get(i)) {
                                 System.out.println(match.getHomeTeam().getName() + " vs. " + match.getAwayTeam().getName());
                             }
                             System.out.println();
@@ -88,6 +98,14 @@ public class Main {
 
 
                         break;
+                    case 5:
+                        MatchService matchService = new MatchService(connection);
+                        TeamService teamService2 = new TeamService();
+                        List<TeamDTO> teamDTOs2 =teamService2.takeTeams();
+                        List<Team> teams2 = teamService2.convertToTeams(teamDTOs2);
+                        League league2 = new League(teams2);
+                        matchService.do_matches(league2);
+
                     case -1:
                         System.out.println("Exiting...");
                         break;
