@@ -19,12 +19,10 @@ public class MatchService {
         matchDTO.setMatch_week_num(weekNum);
 
         // Set home team details
-        matchDTO.setHomeTeamName(match.getHomeTeam().getName());
         matchDTO.setHomeTeamId(match.getHomeTeam().getId());
         matchDTO.setHomeOverallBefore(match.getHomeTeam().getOverallScore());
 
         // Set away team details
-        matchDTO.setAwayTeamName(match.getAwayTeam().getName());
         matchDTO.setAwayTeamId(match.getAwayTeam().getId());
         matchDTO.setAwayOverallBefore(match.getAwayTeam().getOverallScore());
     }
@@ -88,9 +86,7 @@ public class MatchService {
         String insertSQL = "INSERT INTO matches (" +
                 "match_first_or_second, " +
                 "match_week_num, " +
-                "match_home_team_name, " +
                 "match_home_team_id, " +
-                "match_away_team_name, " +
                 "match_away_team_id, " +
                 "match_home_overall_before, " +
                 "match_away_overall_before, " +
@@ -98,23 +94,21 @@ public class MatchService {
                 "match_away_overall_after, " +
                 "match_home_score, " +
                 "match_away_score" +
-                ") VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                ") VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement pstmt = connection.prepareStatement(insertSQL)) {
 
             for (MatchDTO dto : matchDTOs) {
                 pstmt.setString(1, String.valueOf(dto.getMatch_first_or_second()));
                 pstmt.setShort(2, dto.getMatch_week_num());
-                pstmt.setString(3, dto.getHomeTeamName());
-                pstmt.setInt(4, dto.getHomeTeamId());
-                pstmt.setString(5, dto.getAwayTeamName());
-                pstmt.setInt(6, dto.getAwayTeamId());
-                pstmt.setInt(7, dto.getHomeOverallBefore());
-                pstmt.setInt(8, dto.getAwayOverallBefore());
-                pstmt.setInt(9, dto.getHomeOverallAfter());
-                pstmt.setInt(10, dto.getAwayOverallAfter());
-                pstmt.setByte(11, dto.getHomeScore());
-                pstmt.setByte(12, dto.getAwayScore());
+                pstmt.setInt(3, dto.getHomeTeamId());
+                pstmt.setInt(4, dto.getAwayTeamId());
+                pstmt.setInt(5, dto.getHomeOverallBefore());
+                pstmt.setInt(6, dto.getAwayOverallBefore());
+                pstmt.setInt(7, dto.getHomeOverallAfter());
+                pstmt.setInt(8, dto.getAwayOverallAfter());
+                pstmt.setByte(9, dto.getHomeScore());
+                pstmt.setByte(10, dto.getAwayScore());
 
                 pstmt.addBatch();
             }
