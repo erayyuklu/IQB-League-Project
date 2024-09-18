@@ -10,6 +10,79 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class MatchService {
+    private Connection connection;
+
+    public MatchService(Connection connection) {
+        this.connection = connection;
+    }
+
+
+    // Method to simulate a match and determine the winner
+    public void simulateMatch(Match match) {
+        // Base chances
+        double homeBaseChance = 0.50;
+        double awayBaseChance = 0.50;
+
+        // Home advantage effect
+        double homeAdvantage = 0.10; // %10
+        double homeChanceWithAdvantage = homeBaseChance + homeAdvantage;
+
+        // OverallScore effect
+        double scoreDifference = match.getHomeTeam().getOverallScore() - match.getAwayTeam().getOverallScore();
+        double scaledEffect;
+
+        if (scoreDifference < -100) {
+            scaledEffect = -0.25; // Difference is less than -100
+        } else if (scoreDifference > 100) {
+            scaledEffect = +0.25;  // Difference is more than +100
+        } else {
+            scaledEffect = scoreDifference * 25 / 10000; // Difference is between -100 and +100
+        }
+
+        // Update the home and away chances
+        double homeChance = Math.min(homeChanceWithAdvantage + scaledEffect, 1.0);
+        double awayChance = 1.0 - homeChance;
+
+        // Draw chance
+        double drawChance = 0.10;
+
+        // Normalize the possibilities
+        double totalChance = homeChance + awayChance;
+        homeChance = (homeChance / totalChance) * (1.0 - drawChance);
+        awayChance = (awayChance / totalChance) * (1.0 - drawChance);
+
+        // Determine the winner
+        double random = Math.random();
+        if (random <= drawChance) {
+            match.setHomeScore((byte) (Math.random() * 3)); // Scores between 0-2
+            match.setAwayScore(match.getHomeScore()); // Same score
+            System.out.println(match.getHomeTeam().getName() + " (home) - " + match.getAwayTeam().getName() + " (away) The match ended in a draw with a score of " + match.getHomeScore() + "-" + match.getAwayScore() + ".");
+        } else if (random <= drawChance + homeChance) {
+            match.setHomeScore((byte) (Math.random() * 3 + 2)); // Scores between 2-4
+            match.setAwayScore((byte) (Math.random() * 2)); // Scores between 0-1
+            System.out.println(match.getHomeTeam().getName() + " (home) won the match against " + match.getAwayTeam().getName() + " (away) with a score of " + match.getHomeScore() + "-" + match.getAwayScore() + "!");
+        } else {
+            match.setHomeScore((byte) (Math.random() * 2)); // Scores between 0-1
+            match.setAwayScore((byte) (Math.random() * 3 + 2)); // Scores between 2-4
+            System.out.println(match.getAwayTeam().getName() + " (away) won the match against " + match.getHomeTeam().getName() + " (home) with a score of " + match.getAwayScore() + "-" + match.getHomeScore() + "!");
+        }
+
+        // After simulating, update the overall scores
+        updateOverallScores(match);
+    }
+    // Method to update the overall scores of the teams after the match
+    public void updateOverallScores(Match match) {
+        if (match.getHomeScore() > match.getAwayScore()) {
+            match.getHomeTeam().setOverallScore(match.getHomeTeam().getOverallScore() + 3);
+            match.getAwayTeam().setOverallScore(match.getAwayTeam().getOverallScore() - 1);
+        } else if (match.getAwayScore() > match.getHomeScore()) {
+            match.getAwayTeam().setOverallScore(match.getAwayTeam().getOverallScore() + 3);
+            match.getHomeTeam().setOverallScore(match.getHomeTeam().getOverallScore() - 1);
+        } else {
+            match.getHomeTeam().setOverallScore(match.getHomeTeam().getOverallScore() + 1);
+            match.getAwayTeam().setOverallScore(match.getAwayTeam().getOverallScore() + 1);
+        }
+    }
 
     // Method to process MatchDTO before the match simulation
     public void dto_process_before_match(Match match, boolean isFirst, byte weekNum, MatchDTO matchDTO) {
@@ -64,7 +137,7 @@ public class MatchService {
                 dto_process_before_match(match, isFirst, weekNum, matchDTO);
 
                 // Simulate the match
-                match.simulateMatch();
+                simulateMatch(match);  // Call MatchService's simulateMatch
 
                 // Process after match
                 dto_process_after_match(match, matchDTO);
@@ -76,11 +149,6 @@ public class MatchService {
         return matchDTOs;
     }
 
-    private Connection connection;
-
-    public MatchService(Connection connection) {
-        this.connection = connection;
-    }
 
     public void saveMatchDTOsToDatabase(List<MatchDTO> matchDTOs) {
         String insertSQL = "INSERT INTO matches (" +
