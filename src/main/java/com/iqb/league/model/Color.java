@@ -1,4 +1,4 @@
-package com.iqb.league;
+package com.iqb.league.model;
 
 public class Color {
     private String colorName;
@@ -6,6 +6,9 @@ public class Color {
     // Constructor
     public Color(String colorName) {
         this.colorName = colorName;
+    }
+
+    public Color() {
     }
 
     // Getter

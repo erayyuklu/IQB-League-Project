@@ -1,4 +1,4 @@
-package com.iqb.league;
+package com.iqb.league.dto;
 import lombok.Data;
 
 @Data

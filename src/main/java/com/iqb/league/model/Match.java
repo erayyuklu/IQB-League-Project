@@ -1,4 +1,4 @@
-package com.iqb.league;
+package com.iqb.league.model;
 
 import lombok.Data;
 

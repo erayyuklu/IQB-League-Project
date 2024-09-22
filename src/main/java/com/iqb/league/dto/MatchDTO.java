@@ -1,4 +1,4 @@
-package com.iqb.league;
+package com.iqb.league.dto;
 
 import lombok.Data;
 
@@ -15,7 +15,7 @@ public class MatchDTO {
     private int awayOverallAfter;
     private byte homeScore;
     private byte awayScore;
-
+    private int leagueId;
     // Constructors
     public MatchDTO() {
     }

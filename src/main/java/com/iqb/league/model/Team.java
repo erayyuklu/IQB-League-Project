@@ -1,4 +1,4 @@
-package com.iqb.league;
+package com.iqb.league.model;
 
 import lombok.Data;
 
@@ -10,16 +10,19 @@ public class Team {
     private String name;
     private short foundationYear;
     private List<Color> colors; // Use Color array for consistent representation
-    private int overallScore;
+    private DetailedTeamPoints detailedTeamPoints;
 
     // Constructor
     public Team(String name, short foundationYear, List<Color>  colors) {
         this.name = name;
         this.foundationYear = foundationYear;
         this.colors = colors;
-        this.overallScore = 0;
+        this.detailedTeamPoints = new DetailedTeamPoints();
     }
 
     public Team() {
+        this.detailedTeamPoints = new DetailedTeamPoints();
     }
+
+
 }

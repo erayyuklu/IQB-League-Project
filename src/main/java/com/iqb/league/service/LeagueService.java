@@ -1,6 +1,17 @@
-package com.iqb.league;
+package com.iqb.league.service;
 
+import com.iqb.league.dto.DetailedTeamPointsDTO;
+import com.iqb.league.dto.LeagueDTO;
+import com.iqb.league.model.Color;
+import com.iqb.league.model.Match;
+import com.iqb.league.model.Team;
+import com.iqb.league.dto.ColorDTO;
+import com.iqb.league.dto.TeamDTO;
 import org.modelmapper.ModelMapper;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.sql.Connection;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -8,14 +19,46 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Service
 public class LeagueService {
 
-    private Connection connection;
+    private final Connection connection;
 
-    // Constructor to initialize the database connection
+    @Autowired
     public LeagueService(Connection connection) {
         this.connection = connection;
     }
+    public int saveLeagueDTOToDatabase(LeagueDTO leagueDTO) {
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+        int id = 0;
+
+        try {
+            String sql = "INSERT INTO leagues (league_name) VALUES (?) RETURNING league_id";
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, leagueDTO.getLeagueName());
+
+
+            resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                int leagueId = resultSet.getInt("league_id");
+                System.out.println("League ID: " + leagueId);
+                id=leagueId;
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (resultSet != null) resultSet.close();
+                if (preparedStatement != null) preparedStatement.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return id;
+    }
+
 
     // Method to generate fixtures based on the teams
     public List<List<Match>> generateFirstHalfFixtures(List<Team> teams) {
@@ -82,12 +125,13 @@ public class LeagueService {
         return secondHalfFixtures;
     }
 
-    public void showTeams(ModelMapper modelMapper) {
+    public List<TeamDTO> showTeams(ModelMapper modelMapper) {
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
+        List<TeamDTO> teams = new ArrayList<>();
 
         try {
-            String sql = "SELECT t.id, t.name, t.foundation_year, t.overall_score, " +
+            String sql = "SELECT t.id, t.name, t.foundation_year,  " +
                     "array_agg(c.color_name) AS colors " +
                     "FROM public.teams t " +
                     "LEFT JOIN team_colors tc ON t.id = tc.team_id " +
@@ -98,23 +142,24 @@ public class LeagueService {
             preparedStatement = connection.prepareStatement(sql);
             resultSet = preparedStatement.executeQuery();
 
-            System.out.println("ID | Team Name | Year of Foundation | Overall Score | Colors");
+            System.out.println("ID | Team Name | Year of Foundation | Colors");
             System.out.println("-------------------------------------------------------------");
+
 
             while (resultSet.next()) {
                 TeamDTO teamDTO = new TeamDTO();
                 teamDTO.setId(resultSet.getInt("id"));
                 teamDTO.setName(resultSet.getString("name"));
                 teamDTO.setFoundationYear(resultSet.getShort("foundation_year"));
-                teamDTO.setOverallScore(resultSet.getInt("overall_score"));
+
 
                 Array colorArray = resultSet.getArray("colors");
                 if (colorArray != null) {
                     String[] colors = (String[]) colorArray.getArray();
                     teamDTO.setColors(colors);
                 }
-
-                System.out.println(teamDTO.getId() + " | " + teamDTO.getName() + " | " + teamDTO.getFoundationYear() + " | " + teamDTO.getOverallScore() + " | " + String.join(", ", teamDTO.getColors()));
+                teams.add(teamDTO);
+                System.out.println(teamDTO.getId() + " | " + teamDTO.getName() + " | " + teamDTO.getFoundationYear() + " | " + String.join(", ", teamDTO.getColors()));
             }
 
         } catch (SQLException e) {
@@ -127,6 +172,7 @@ public class LeagueService {
                 e.printStackTrace();
             }
         }
+        return teams;
     }
 
     public void addTeam(ModelMapper modelMapper, TeamDTO teamDTO) {
@@ -137,16 +183,15 @@ public class LeagueService {
             // Add colors first and get their IDs
             List<Integer> colorIds = new ArrayList<>();
             for (String color : teamDTO.getColors()) {
-                int colorId = addColor(color);
+                int colorId = addColor(color, modelMapper);
                 colorIds.add(colorId);
             }
 
             // Insert the team
-            String sql = "INSERT INTO public.teams (name, foundation_year, overall_score) VALUES (?, ?, ?) RETURNING id";
+            String sql = "INSERT INTO public.teams (name, foundation_year) VALUES (?, ?) RETURNING id";
             preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setString(1, teamDTO.getName());
             preparedStatement.setShort(2, teamDTO.getFoundationYear());
-            preparedStatement.setInt(3, teamDTO.getOverallScore());
 
             resultSet = preparedStatement.executeQuery();
             int teamId = 0;
@@ -210,36 +255,50 @@ public class LeagueService {
         }
     }
 
-    public int addColor(String colorName) throws SQLException {
+    public int addColor(String colorName, ModelMapper modelMapper) throws SQLException {
         PreparedStatement ps = null;
         ResultSet rs = null;
-        int colorId = 0;
+        ColorDTO colorDTO = new ColorDTO();
+        Color colorEntity = new Color(); // Your entity class
 
         try {
             // Check if the color already exists in the database
-            String query = "SELECT id FROM colors WHERE color_name = ?";
+            String query = "SELECT id, color_name FROM colors WHERE color_name = ?";
             ps = connection.prepareStatement(query);
             ps.setString(1, colorName);
             rs = ps.executeQuery();
 
             if (rs.next()) {
-                colorId = rs.getInt("id");
+                // If the color exists, create a ColorDTO from the result
+                colorDTO.setId(rs.getInt("id"));
+                colorDTO.setColorName(rs.getString("color_name"));
             } else {
+                // If the color does not exist, map ColorDTO to Color entity
+                colorDTO.setColorName(colorName);
+                modelMapper.map(colorDTO, colorEntity); // Automapping to entity
+
                 // Insert the color and get the ID
                 String insert = "INSERT INTO colors (color_name) VALUES (?) RETURNING id";
                 ps = connection.prepareStatement(insert);
-                ps.setString(1, colorName);
+                ps.setString(1, colorDTO.getColorName());
                 rs = ps.executeQuery();
 
                 if (rs.next()) {
-                    colorId = rs.getInt("id");
+                    colorDTO.setId(rs.getInt("id"));
+                    // Optionally, you can map back to DTO if needed
+                    modelMapper.map(colorEntity, colorDTO);
                 }
             }
         } finally {
             if (rs != null) rs.close();
             if (ps != null) ps.close();
         }
-
-        return colorId;
+        return colorDTO.getId();
     }
+
+
+
+
+
+
 }

@@ -1,4 +1,4 @@
-package com.iqb.league;
+package com.iqb.league.dto;
 
 import lombok.Data;
 
@@ -8,14 +8,12 @@ public class TeamDTO {
     private String name;
     private short foundationYear;
     private String[] colors; // Renkler dizisi olarak tanımlandı
-    private int overallScore;
 
     // Parametreli yapıcı metod
     public TeamDTO(String name, short foundationYear, String[] colors) {
         this.name = name;
         this.foundationYear = foundationYear;
         this.colors = colors;
-        this.overallScore = 0;
     }
 
     public TeamDTO() {

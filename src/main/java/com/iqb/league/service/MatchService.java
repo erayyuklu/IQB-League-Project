@@ -1,16 +1,20 @@
-package com.iqb.league;
+package com.iqb.league.service;
 
+import com.iqb.league.model.League;
+import com.iqb.league.model.Match;
+import com.iqb.league.dto.MatchDTO;
+import org.springframework.stereotype.Service;
+
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.List;
 
+@Service
 public class MatchService {
-    private Connection connection;
+    private final Connection connection;
 
     public MatchService(Connection connection) {
         this.connection = connection;
@@ -19,6 +23,8 @@ public class MatchService {
 
     // Method to simulate a match and determine the winner
     public void simulateMatch(Match match) {
+
+
         // Base chances
         double homeBaseChance = 0.50;
         double awayBaseChance = 0.50;
@@ -28,7 +34,7 @@ public class MatchService {
         double homeChanceWithAdvantage = homeBaseChance + homeAdvantage;
 
         // OverallScore effect
-        double scoreDifference = match.getHomeTeam().getOverallScore() - match.getAwayTeam().getOverallScore();
+        double scoreDifference = match.getHomeTeam().getDetailedTeamPoints().getOverallScore() - match.getAwayTeam().getDetailedTeamPoints().getOverallScore();
         double scaledEffect;
 
         if (scoreDifference < -100) {
@@ -54,38 +60,69 @@ public class MatchService {
         // Determine the winner
         double random = Math.random();
         if (random <= drawChance) {
-            match.setHomeScore((byte) (Math.random() * 3)); // Scores between 0-2
+            byte score = (byte) (Math.random() * 3);
+            match.setHomeScore(score); // Scores between 0-2
+            match.getHomeTeam().getDetailedTeamPoints().increaseGoalsScored(score);
+            match.getHomeTeam().getDetailedTeamPoints().increaseMatchesDrawn();
+            match.getAwayTeam().getDetailedTeamPoints().increaseGoalsConceded(score);
+
             match.setAwayScore(match.getHomeScore()); // Same score
+            match.getAwayTeam().getDetailedTeamPoints().increaseGoalsScored(match.getAwayScore());
+            match.getAwayTeam().getDetailedTeamPoints().increaseMatchesDrawn();
+            match.getHomeTeam().getDetailedTeamPoints().increaseGoalsConceded(score);
+
             System.out.println(match.getHomeTeam().getName() + " (home) - " + match.getAwayTeam().getName() + " (away) The match ended in a draw with a score of " + match.getHomeScore() + "-" + match.getAwayScore() + ".");
         } else if (random <= drawChance + homeChance) {
-            match.setHomeScore((byte) (Math.random() * 3 + 2)); // Scores between 2-4
-            match.setAwayScore((byte) (Math.random() * 2)); // Scores between 0-1
+            byte homeScore= (byte) (Math.random() * 3 + 2); // Scores between 2-4
+            byte awayScore = (byte) (Math.random() * 2); // Scores between 0-1
+            match.setHomeScore(homeScore); // Scores between 2-4
+            match.getHomeTeam().getDetailedTeamPoints().increaseGoalsScored(homeScore);
+            match.getHomeTeam().getDetailedTeamPoints().increaseMatchesWon();
+            match.getAwayTeam().getDetailedTeamPoints().increaseGoalsConceded(homeScore);
+
+
+            match.setAwayScore(awayScore); // Scores between 0-1
+            match.getAwayTeam().getDetailedTeamPoints().increaseGoalsScored(awayScore);
+            match.getAwayTeam().getDetailedTeamPoints().increaseMatchesLost();
+            match.getHomeTeam().getDetailedTeamPoints().increaseGoalsConceded(awayScore);
+
             System.out.println(match.getHomeTeam().getName() + " (home) won the match against " + match.getAwayTeam().getName() + " (away) with a score of " + match.getHomeScore() + "-" + match.getAwayScore() + "!");
         } else {
-            match.setHomeScore((byte) (Math.random() * 2)); // Scores between 0-1
-            match.setAwayScore((byte) (Math.random() * 3 + 2)); // Scores between 2-4
+            byte homeScore= (byte) (Math.random() * 2); // Scores between 0-1
+            byte awayScore = (byte) (Math.random() * 3 + 2); // Scores between 2-4
+            match.setHomeScore(homeScore); // Scores between 0-1
+            match.getHomeTeam().getDetailedTeamPoints().increaseGoalsScored(homeScore);
+            match.getHomeTeam().getDetailedTeamPoints().increaseMatchesLost();
+            match.getAwayTeam().getDetailedTeamPoints().increaseGoalsConceded(homeScore);
+
+            match.setAwayScore(awayScore); // Scores between 2-4
+            match.getAwayTeam().getDetailedTeamPoints().increaseGoalsScored(awayScore);
+            match.getAwayTeam().getDetailedTeamPoints().increaseMatchesWon();
+            match.getHomeTeam().getDetailedTeamPoints().increaseGoalsConceded(awayScore);
             System.out.println(match.getAwayTeam().getName() + " (away) won the match against " + match.getHomeTeam().getName() + " (home) with a score of " + match.getAwayScore() + "-" + match.getHomeScore() + "!");
         }
 
-        // After simulating, update the overall scores
+        // After simulating, update the overall scores and goal differences
         updateOverallScores(match);
+        match.getHomeTeam().getDetailedTeamPoints().updateGoalDifference();
+        match.getAwayTeam().getDetailedTeamPoints().updateGoalDifference();
     }
     // Method to update the overall scores of the teams after the match
     public void updateOverallScores(Match match) {
         if (match.getHomeScore() > match.getAwayScore()) {
-            match.getHomeTeam().setOverallScore(match.getHomeTeam().getOverallScore() + 3);
-            match.getAwayTeam().setOverallScore(match.getAwayTeam().getOverallScore() - 1);
+            match.getHomeTeam().getDetailedTeamPoints().updateOverallScore(3);
+            match.getAwayTeam().getDetailedTeamPoints().updateOverallScore(-1);
         } else if (match.getAwayScore() > match.getHomeScore()) {
-            match.getAwayTeam().setOverallScore(match.getAwayTeam().getOverallScore() + 3);
-            match.getHomeTeam().setOverallScore(match.getHomeTeam().getOverallScore() - 1);
+            match.getAwayTeam().getDetailedTeamPoints().updateOverallScore(3);
+            match.getHomeTeam().getDetailedTeamPoints().updateOverallScore(-1);
         } else {
-            match.getHomeTeam().setOverallScore(match.getHomeTeam().getOverallScore() + 1);
-            match.getAwayTeam().setOverallScore(match.getAwayTeam().getOverallScore() + 1);
+            match.getHomeTeam().getDetailedTeamPoints().updateOverallScore(1);
+            match.getAwayTeam().getDetailedTeamPoints().updateOverallScore(1);
         }
     }
 
     // Method to process MatchDTO before the match simulation
-    public void dto_process_before_match(Match match, boolean isFirst, byte weekNum, MatchDTO matchDTO) {
+    public void dto_process_before_match(Match match, boolean isFirst, byte weekNum, MatchDTO matchDTO, int leagueId) {
         // Fill in details before the match
         matchDTO.setMatchId(0); // Assuming ID is auto-generated by the DB
         matchDTO.setMatch_first_or_second(isFirst ? 'f' : 's');
@@ -93,18 +130,20 @@ public class MatchService {
 
         // Set home team details
         matchDTO.setHomeTeamId(match.getHomeTeam().getId());
-        matchDTO.setHomeOverallBefore(match.getHomeTeam().getOverallScore());
+        matchDTO.setHomeOverallBefore(match.getHomeTeam().getDetailedTeamPoints().getOverallScore());
 
         // Set away team details
         matchDTO.setAwayTeamId(match.getAwayTeam().getId());
-        matchDTO.setAwayOverallBefore(match.getAwayTeam().getOverallScore());
+        matchDTO.setAwayOverallBefore(match.getAwayTeam().getDetailedTeamPoints().getOverallScore());
+
+        matchDTO.setLeagueId(leagueId);
     }
 
     // Method to process MatchDTO after the match simulation
     public void dto_process_after_match(Match match, MatchDTO matchDTO) {
         // Set the overall scores after the match
-        matchDTO.setHomeOverallAfter(match.getHomeTeam().getOverallScore());
-        matchDTO.setAwayOverallAfter(match.getAwayTeam().getOverallScore());
+        matchDTO.setHomeOverallAfter(match.getHomeTeam().getDetailedTeamPoints().getOverallScore());
+        matchDTO.setAwayOverallAfter(match.getAwayTeam().getDetailedTeamPoints().getOverallScore());
 
         // Set match scores
         matchDTO.setHomeScore(match.getHomeScore());
@@ -115,17 +154,17 @@ public class MatchService {
     public void do_matches(League league) {
         // Process first half matches
         List<List<Match>> firstHalfFixtures = league.getFirstHalfFixtures();
-        List<MatchDTO> firstHalfDTOs =process_half_matches(firstHalfFixtures, true);
+        List<MatchDTO> firstHalfDTOs =process_half_matches(firstHalfFixtures, true, getLeagueIdByName(league.getLeagueName()));
         saveMatchDTOsToDatabase(firstHalfDTOs);
 
         // Process second half matches
         List<List<Match>> secondHalfFixtures = league.getSecondHalfFixtures();
-        List<MatchDTO> secondHalfDTOs = process_half_matches(secondHalfFixtures, false);
+        List<MatchDTO> secondHalfDTOs = process_half_matches(secondHalfFixtures, false, getLeagueIdByName(league.getLeagueName()));
         saveMatchDTOsToDatabase(secondHalfDTOs);
     }
 
     // Helper method to process matches for each half
-    private List<MatchDTO> process_half_matches(List<List<Match>> halfFixtures, boolean isFirst) {
+    private List<MatchDTO> process_half_matches(List<List<Match>> halfFixtures, boolean isFirst, int leagueId) {
         List<MatchDTO> matchDTOs = new ArrayList<>();
         for (byte weekNum = 1; weekNum <= halfFixtures.size(); weekNum++) {
             List<Match> weeklyMatches = halfFixtures.get(weekNum - 1); // Get matches for this week
@@ -134,7 +173,7 @@ public class MatchService {
                 MatchDTO matchDTO = new MatchDTO(); // Create a new DTO for each match
 
                 // Process before match
-                dto_process_before_match(match, isFirst, weekNum, matchDTO);
+                dto_process_before_match(match, isFirst, weekNum, matchDTO,leagueId);
 
                 // Simulate the match
                 simulateMatch(match);  // Call MatchService's simulateMatch
@@ -161,8 +200,9 @@ public class MatchService {
                 "match_home_overall_after, " +
                 "match_away_overall_after, " +
                 "match_home_score, " +
-                "match_away_score" +
-                ") VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "match_away_score," +
+                "league_id"+
+                ") VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)";
 
         try (PreparedStatement pstmt = connection.prepareStatement(insertSQL)) {
 
@@ -177,6 +217,7 @@ public class MatchService {
                 pstmt.setInt(8, dto.getAwayOverallAfter());
                 pstmt.setByte(9, dto.getHomeScore());
                 pstmt.setByte(10, dto.getAwayScore());
+                pstmt.setInt(11, dto.getLeagueId());
 
                 pstmt.addBatch();
             }
@@ -188,5 +229,19 @@ public class MatchService {
             e.printStackTrace();
             // Handle SQL exceptions
         }
+    }
+
+    public Integer getLeagueIdByName(String leagueName) {
+        String query = "SELECT league_id FROM leagues WHERE league_name = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, leagueName);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                return resultSet.getInt("league_id");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace(); // Hata yönetimi
+        }
+        return null; // Lig bulunamazsa null döner
     }
 }

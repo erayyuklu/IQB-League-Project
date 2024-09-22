@@ -42,10 +42,15 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <version>3.1.3</version>
         </dependency>
 
-        <!-- Diğer bağımlılıklar buraya eklenebilir -->
+        <!-- Spring JDBC -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+        </dependency>
+
+        <!-- Other dependencies can be added here -->
     </dependencies>
 
     <build>

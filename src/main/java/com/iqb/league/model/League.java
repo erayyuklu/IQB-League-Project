@@ -1,11 +1,15 @@
-package com.iqb.league;
+package com.iqb.league.model;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import com.iqb.league.service.LeagueService;
 import lombok.Data;
 
 @Data
 public class League {
+    private String leagueName;
+    private int leagueId;
     private List<Team> teams;
     private List<List<Match>> firstHalfFixtures;
     private List<List<Match>> secondHalfFixtures;
@@ -15,6 +19,7 @@ public class League {
         List<Team> mutableTeams = new ArrayList<>(teams); // Copying to an ArrayList to make it mutable
         mutableTeams.sort((t1, t2) -> t1.getName().compareTo(t2.getName())); // Ordering the teams by name
         this.teams = mutableTeams;
+
 
         if (leagueService == null) {
             throw new IllegalArgumentException("LeagueService must not be null");

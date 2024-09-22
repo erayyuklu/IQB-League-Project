@@ -1,6 +1,17 @@
 package com.iqb.league;
 
+import com.iqb.league.dto.DetailedTeamPointsDTO;
+import com.iqb.league.dto.LeagueDTO;
+import com.iqb.league.dto.TeamDTO;
+import com.iqb.league.model.League;
+import com.iqb.league.model.Match;
+import com.iqb.league.model.Team;
+import com.iqb.league.service.LeagueService;
+import com.iqb.league.service.MatchService;
+import com.iqb.league.service.TeamService;
 import org.modelmapper.ModelMapper;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -8,6 +19,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Scanner;
 
+@SpringBootApplication
 public class Main {
     public static final String RESET = "\u001B[0m";
     public static final String RED = "\u001B[31m";
@@ -28,6 +40,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
+        SpringApplication.run(IqbLeagueProjectApplication.class, args);
         Connection connection = null;
         try {
             // Create a connection to the database
@@ -120,10 +133,9 @@ public class Main {
     }
 
     private void createFixtures() {
-        TeamService teamService = new TeamService();
+        TeamService teamService = new TeamService(connection);
         List<TeamDTO> teamDTOs = teamService.takeTeams();
         List<Team> teams = teamService.convertToTeams(teamDTOs);
-
         // Create a league using the list of teams and the LeagueService instance
         League league = new League(teams, leagueService);
 
@@ -151,15 +163,31 @@ public class Main {
         }
     }
 
-    private void startLeague() {
-        TeamService teamService = new TeamService();
+    private void startLeague() throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("Give a name to the league (optional):");
+        String leagueName= scanner.nextLine();
+        TeamService teamService = new TeamService(connection);
         List<TeamDTO> teamDTOs = teamService.takeTeams();
         List<Team> teams = teamService.convertToTeams(teamDTOs);
 
+
+
         // Create a league using the list of teams and the LeagueService instance
         League league = new League(teams, leagueService);
+        league.setLeagueName(leagueName);
+        LeagueDTO leagueDTO = new LeagueDTO(leagueName);
+        int leagueId=leagueService.saveLeagueDTOToDatabase(leagueDTO);
+        for (Team team : teams) {
+            teamService.IdMappingForTeamAndPoints(team, leagueId);
+        }
+
 
         MatchService matchService = new MatchService(connection);
         matchService.do_matches(league);
+        List<DetailedTeamPointsDTO> detailedTeamPointsDTOS=teamService.convertToDetailedTeamPointsDTOs(teams);
+        teamService.saveDetailedTeamPointsDTOsToDatabase(detailedTeamPointsDTOS);
+        teamService.resetDetailedTeamPoints(teams);
     }
 }
