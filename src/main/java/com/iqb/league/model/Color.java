@@ -1,5 +1,7 @@
 package com.iqb.league.model;
+import lombok.Data;
 
+@Data
 public class Color {
     private String colorName;
 
@@ -11,13 +13,10 @@ public class Color {
     public Color() {
     }
 
-    // Getter
-    public String getColorName() {
-        return colorName;
+    @Override
+    public String toString() {
+        return colorName; // Yalnızca renk ismini döndür
     }
 
-    // Setter
-    public void setColorName(String colorName) {
-        this.colorName = colorName;
-    }
+
 }

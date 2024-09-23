@@ -3,6 +3,7 @@ package com.iqb.league.service;
 import com.iqb.league.dto.DetailedTeamPointsDTO;
 import com.iqb.league.dto.LeagueDTO;
 import com.iqb.league.model.Color;
+import com.iqb.league.model.League;
 import com.iqb.league.model.Match;
 import com.iqb.league.model.Team;
 import com.iqb.league.dto.ColorDTO;
@@ -294,6 +295,170 @@ public class LeagueService {
             if (ps != null) ps.close();
         }
         return colorDTO.getId();
+    }
+
+    public List<DetailedTeamPointsDTO> getTeamPointsByLeagueName(String leagueName) {
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+        List<DetailedTeamPointsDTO> teamPointsList = new ArrayList<>();
+
+
+        try {
+            String sql = "SELECT dtp.team_id, dtp.goals_scored, dtp.goals_conceded, dtp.matches_won, " +
+                    "dtp.matches_lost, dtp.matches_drawn, dtp.goal_difference, dtp.overall_score, dtp.league_id " +
+                    "FROM public.detailed_team_points dtp " +
+                    "JOIN public.leagues l ON dtp.league_id = l.league_id " +
+                    "WHERE l.league_name = ? " +
+                    "ORDER BY dtp.team_id ASC";
+
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, leagueName);
+            resultSet = preparedStatement.executeQuery();
+
+            System.out.println("Team ID | Goals Scored | Goals Conceded | Matches Won | Matches Lost | Matches Drawn | Goal Difference | Overall Score | League ID");
+            System.out.println("-------------------------------------------------------------------------------------------------------------");
+
+            while (resultSet.next()) {
+                DetailedTeamPointsDTO dto = new DetailedTeamPointsDTO();
+                dto.setTeamId(resultSet.getInt("team_id"));
+                dto.setGoalsScored(resultSet.getInt("goals_scored"));
+                dto.setGoalsConceded(resultSet.getInt("goals_conceded"));
+                dto.setMatchesWon(resultSet.getInt("matches_won"));
+                dto.setMatchesLost(resultSet.getInt("matches_lost"));
+                dto.setMatchesDrawn(resultSet.getInt("matches_drawn"));
+                dto.setGoalDifference(resultSet.getInt("goal_difference"));
+                dto.setOverallScore(resultSet.getInt("overall_score"));
+                dto.setLeagueId(resultSet.getInt("league_id"));
+
+                teamPointsList.add(dto);
+
+                // Ekrana yazdırma
+                System.out.println(dto.getTeamId() + " | " +
+                        dto.getGoalsScored() + " | " +
+                        dto.getGoalsConceded() + " | " +
+                        dto.getMatchesWon() + " | " +
+                        dto.getMatchesLost() + " | " +
+                        dto.getMatchesDrawn() + " | " +
+                        dto.getGoalDifference() + " | " +
+                        dto.getOverallScore() + " | " +
+                        dto.getLeagueId());
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (resultSet != null) resultSet.close();
+                if (preparedStatement != null) preparedStatement.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return teamPointsList;
+    }
+
+    public Integer getTeamStatistics(String leagueName, String teamName, String statisticType) {
+        Integer statisticValue = null;
+        String sql = "SELECT dtp." + statisticType + " " +
+                "FROM public.detailed_team_points dtp " +
+                "JOIN public.teams t ON dtp.team_id = t.id " +
+                "JOIN public.leagues l ON dtp.league_id = l.league_id " +
+                "WHERE l.league_name = ? AND t.name = ?";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setString(1, leagueName);
+            preparedStatement.setString(2, teamName);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next()) {
+                statisticValue = resultSet.getInt(statisticType);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return statisticValue;
+    }
+
+    public String createFixturesAPI() {
+        TeamService teamService = new TeamService(connection);
+        List<TeamDTO> teamDTOs = teamService.takeTeams();
+        List<Team> teams = teamService.convertToTeams(teamDTOs);
+        LeagueService leagueService = new LeagueService(connection);
+        League league = new League(teams, leagueService);
+
+        // Get fixtures from the league
+        List<List<Match>> firstHalfFixtures = league.getFirstHalfFixtures();
+        List<List<Match>> secondHalfFixtures = league.getSecondHalfFixtures();
+
+        // StringBuilder to construct the output string
+        StringBuilder fixturesOutput = new StringBuilder();
+
+        fixturesOutput.append("First half fixtures:\n");
+        for (int i = 0; i < firstHalfFixtures.size(); i++) {
+            fixturesOutput.append("Week ").append(i + 1).append(":\n");
+            for (Match match : firstHalfFixtures.get(i)) {
+                fixturesOutput.append(match.getHomeTeam().getName())
+                        .append(" vs. ")
+                        .append(match.getAwayTeam().getName())
+                        .append("\n");
+            }
+            fixturesOutput.append("\n");
+        }
+
+        fixturesOutput.append("Second half fixtures:\n");
+        for (int i = 0; i < secondHalfFixtures.size(); i++) {
+            fixturesOutput.append("Week ").append(i + 1).append(":\n");
+            for (Match match : secondHalfFixtures.get(i)) {
+                fixturesOutput.append(match.getHomeTeam().getName())
+                        .append(" vs. ")
+                        .append(match.getAwayTeam().getName())
+                        .append("\n");
+            }
+            fixturesOutput.append("\n");
+        }
+
+        // Return the fixtures as a String
+        return fixturesOutput.toString();
+    }
+
+    public Team findTeamByName(String teamName) {
+        Team team = null;
+        String sql = "SELECT t.id, t.name, t.foundation_year, c.id AS color_id, c.color_name " +
+                "FROM public.teams t " +
+                "JOIN public.team_colors tc ON t.id = tc.team_id " +
+                "JOIN public.colors c ON tc.color_id = c.id " +
+                "WHERE t.name = ?";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setString(1, teamName);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next()) {
+                // Takım bilgilerini al
+                int id = resultSet.getInt("id");
+                String name = resultSet.getString("name");
+                short foundationYear = resultSet.getShort("foundation_year");
+
+                // Renkleri al
+                List<Color> colors = new ArrayList<>();
+                do {
+                    int colorId = resultSet.getInt("color_id");
+                    String colorName = resultSet.getString("color_name");
+                    // Renk nesnesini oluştur ve listeye ekle
+                    colors.add(new Color(colorName)); // Color sınıfının uygun yapıcı metodunu kullanın
+                } while (resultSet.next());
+
+                // Takım nesnesini oluştur
+                team = new Team(name, foundationYear, colors);
+                team.setId(id);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return team; // Takım nesnesini döndür
     }
 
 
