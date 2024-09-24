@@ -44,13 +44,23 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+
         <!-- Spring JDBC -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-jdbc</artifactId>
         </dependency>
 
-        <!-- Other dependencies can be added here -->
+
+        <!-- javax Servlet API -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>3.1.0</version> <!-- Ya da 4.0.1 gibi daha yeni bir sürüm -->
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Diğer bağımlılıklar buraya eklenebilir -->
     </dependencies>
 
     <build>

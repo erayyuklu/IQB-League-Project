@@ -16,7 +16,7 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("/teams")
+@RequestMapping("/{key}/teams")
 public class LeagueController {
 
     @Autowired
