@@ -22,8 +22,10 @@ public class MatchService {
 
 
     // Method to simulate a match and determine the winner
-    public void simulateMatch(Match match) {
+    public String simulateMatch(Match match) {
 
+        // Initialize a StringBuilder to accumulate the result message
+        StringBuilder resultBuilder = new StringBuilder();
 
         // Base chances
         double homeBaseChance = 0.50;
@@ -71,42 +73,52 @@ public class MatchService {
             match.getAwayTeam().getDetailedTeamPoints().increaseMatchesDrawn();
             match.getHomeTeam().getDetailedTeamPoints().increaseGoalsConceded(score);
 
-            System.out.println(match.getHomeTeam().getName() + " (home) - " + match.getAwayTeam().getName() + " (away) The match ended in a draw with a score of " + match.getHomeScore() + "-" + match.getAwayScore() + ".");
+            // Append the draw result to StringBuilder and console output
+            String drawResult = match.getHomeTeam().getName() + " (home) - " + match.getAwayTeam().getName() + " (away) The match ended in a draw with a score of " + match.getHomeScore() + "-" + match.getAwayScore() + ".";
+            resultBuilder.append(drawResult).append("\n");
         } else if (random <= drawChance + homeChance) {
-            byte homeScore= (byte) (Math.random() * 3 + 2); // Scores between 2-4
+            byte homeScore = (byte) (Math.random() * 3 + 2); // Scores between 2-4
             byte awayScore = (byte) (Math.random() * 2); // Scores between 0-1
-            match.setHomeScore(homeScore); // Scores between 2-4
+            match.setHomeScore(homeScore);
             match.getHomeTeam().getDetailedTeamPoints().increaseGoalsScored(homeScore);
             match.getHomeTeam().getDetailedTeamPoints().increaseMatchesWon();
             match.getAwayTeam().getDetailedTeamPoints().increaseGoalsConceded(homeScore);
 
-
-            match.setAwayScore(awayScore); // Scores between 0-1
+            match.setAwayScore(awayScore);
             match.getAwayTeam().getDetailedTeamPoints().increaseGoalsScored(awayScore);
             match.getAwayTeam().getDetailedTeamPoints().increaseMatchesLost();
             match.getHomeTeam().getDetailedTeamPoints().increaseGoalsConceded(awayScore);
 
-            System.out.println(match.getHomeTeam().getName() + " (home) won the match against " + match.getAwayTeam().getName() + " (away) with a score of " + match.getHomeScore() + "-" + match.getAwayScore() + "!");
+            // Append the home win result to StringBuilder and console output
+            String homeWinResult = match.getHomeTeam().getName() + " (home) won the match against " + match.getAwayTeam().getName() + " (away) with a score of " + match.getHomeScore() + "-" + match.getAwayScore() + "!";
+            resultBuilder.append(homeWinResult).append("\n");
         } else {
-            byte homeScore= (byte) (Math.random() * 2); // Scores between 0-1
+            byte homeScore = (byte) (Math.random() * 2); // Scores between 0-1
             byte awayScore = (byte) (Math.random() * 3 + 2); // Scores between 2-4
-            match.setHomeScore(homeScore); // Scores between 0-1
+            match.setHomeScore(homeScore);
             match.getHomeTeam().getDetailedTeamPoints().increaseGoalsScored(homeScore);
             match.getHomeTeam().getDetailedTeamPoints().increaseMatchesLost();
             match.getAwayTeam().getDetailedTeamPoints().increaseGoalsConceded(homeScore);
 
-            match.setAwayScore(awayScore); // Scores between 2-4
+            match.setAwayScore(awayScore);
             match.getAwayTeam().getDetailedTeamPoints().increaseGoalsScored(awayScore);
             match.getAwayTeam().getDetailedTeamPoints().increaseMatchesWon();
             match.getHomeTeam().getDetailedTeamPoints().increaseGoalsConceded(awayScore);
-            System.out.println(match.getAwayTeam().getName() + " (away) won the match against " + match.getHomeTeam().getName() + " (home) with a score of " + match.getAwayScore() + "-" + match.getHomeScore() + "!");
+
+            // Append the away win result to StringBuilder and console output
+            String awayWinResult = match.getAwayTeam().getName() + " (away) won the match against " + match.getHomeTeam().getName() + " (home) with a score of " + match.getAwayScore() + "-" + match.getHomeScore() + "!";
+            resultBuilder.append(awayWinResult).append("\n");
         }
 
         // After simulating, update the overall scores and goal differences
         updateOverallScores(match);
         match.getHomeTeam().getDetailedTeamPoints().updateGoalDifference();
         match.getAwayTeam().getDetailedTeamPoints().updateGoalDifference();
+
+        // Return the accumulated result as a string
+        return resultBuilder.toString();
     }
+
     // Method to update the overall scores of the teams after the match
     public void updateOverallScores(Match match) {
         if (match.getHomeScore() > match.getAwayScore()) {
@@ -151,22 +163,29 @@ public class MatchService {
     }
 
     // New method to process all matches in the league
-    public void do_matches(League league) {
+    public String do_matches(League league) {
+        // Initialize a StringBuilder to accumulate match summaries
+        StringBuilder matchSummaries = new StringBuilder();
         // Process first half matches
+        matchSummaries.append("First half fixtures:\n");
         List<List<Match>> firstHalfFixtures = league.getFirstHalfFixtures();
-        List<MatchDTO> firstHalfDTOs =process_half_matches(firstHalfFixtures, true, getLeagueIdByName(league.getLeagueName()));
+        List<MatchDTO> firstHalfDTOs =process_half_matches(firstHalfFixtures, true, getLeagueIdByName(league.getLeagueName()), matchSummaries);
         saveMatchDTOsToDatabase(firstHalfDTOs);
 
         // Process second half matches
+        matchSummaries.append("\nSecond half fixtures:\n");
         List<List<Match>> secondHalfFixtures = league.getSecondHalfFixtures();
-        List<MatchDTO> secondHalfDTOs = process_half_matches(secondHalfFixtures, false, getLeagueIdByName(league.getLeagueName()));
+        List<MatchDTO> secondHalfDTOs = process_half_matches(secondHalfFixtures, false, getLeagueIdByName(league.getLeagueName()), matchSummaries);
         saveMatchDTOsToDatabase(secondHalfDTOs);
+        return matchSummaries.toString();
     }
 
     // Helper method to process matches for each half
-    private List<MatchDTO> process_half_matches(List<List<Match>> halfFixtures, boolean isFirst, int leagueId) {
+    private List<MatchDTO> process_half_matches(List<List<Match>> halfFixtures, boolean isFirst, int leagueId, StringBuilder matchSummaries) {
         List<MatchDTO> matchDTOs = new ArrayList<>();
+
         for (byte weekNum = 1; weekNum <= halfFixtures.size(); weekNum++) {
+            matchSummaries.append("Week ").append(weekNum).append(":\n");
             List<Match> weeklyMatches = halfFixtures.get(weekNum - 1); // Get matches for this week
 
             for (Match match : weeklyMatches) {
@@ -176,7 +195,8 @@ public class MatchService {
                 dto_process_before_match(match, isFirst, weekNum, matchDTO,leagueId);
 
                 // Simulate the match
-                simulateMatch(match);  // Call MatchService's simulateMatch
+                String MatchString=simulateMatch(match);  // Call MatchService's simulateMatch
+                matchSummaries.append(MatchString);
 
                 // Process after match
                 dto_process_after_match(match, matchDTO);

@@ -12,11 +12,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 
+import java.sql.SQLException;
 import java.util.List;
 
 
 @RestController
-@RequestMapping("/{key}/teams")
+@RequestMapping("/{key}")
 public class LeagueController {
 
     @Autowired
@@ -25,13 +26,13 @@ public class LeagueController {
     @Autowired
     private LeagueService leagueService;
 
-    @GetMapping("/show")
+    @GetMapping("/teams/show")
     public ResponseEntity<?> showTeams() {
         List<TeamDTO> teams = leagueService.showTeams(modelMapper);
         return ResponseEntity.ok(teams);
     }
 
-    @PostMapping("/add/{name}/{foundationYear}/{colors}")
+    @PostMapping("/teams/add/{name}/{foundationYear}/{colors}")
     public ResponseEntity<?> addTeam(
             @PathVariable String name,
             @PathVariable short foundationYear,
@@ -49,13 +50,13 @@ public class LeagueController {
         }
     }
 
-    @DeleteMapping("/delete/{teamId}")
+    @DeleteMapping("/teams/delete/{teamId}")
     public ResponseEntity<?> deleteTeam(@PathVariable int teamId) {
         leagueService.deleteTeam(teamId);
         return ResponseEntity.ok("Team successfully deleted.");
     }
 
-    @GetMapping("/detailed_points/{leagueName}")
+    @GetMapping("/teams/detailed_points/{leagueName}")
     public ResponseEntity<List<DetailedTeamPointsDTO>> getTeamPointsByLeagueName(@PathVariable String leagueName) {
         List<DetailedTeamPointsDTO> points = leagueService.getTeamPointsByLeagueName(leagueName);
         if (points.isEmpty()) {
@@ -64,7 +65,7 @@ public class LeagueController {
         return ResponseEntity.ok(points);
     }
 
-    @GetMapping("/detailed_points/{leagueName}/{teamName}/{statisticType}")
+    @GetMapping("/teams/detailed_points/{leagueName}/{teamName}/{statisticType}")
     public ResponseEntity<Integer> getTeamStatistics(@PathVariable String leagueName, @PathVariable String teamName, @PathVariable String statisticType) {
         Integer statisticValue = leagueService.getTeamStatistics(leagueName, teamName, statisticType);
 
@@ -79,7 +80,7 @@ public class LeagueController {
         String fixtures = leagueService.createFixturesAPI();
         return ResponseEntity.ok(fixtures);
     }
-    @GetMapping("/{teamName}/colors")
+    @GetMapping("/teams/{teamName}/colors")
     public ResponseEntity<List<String>> getTeamColors(@PathVariable String teamName) {
         Team team = leagueService.findTeamByName(teamName); // Takımı bulmak için service çağrısı
         if (team == null) {
@@ -91,13 +92,24 @@ public class LeagueController {
         return ResponseEntity.ok(colors);
     }
 
-    @GetMapping("/{teamName}/foundation_year")
+    @GetMapping("/teams/{teamName}/foundation_year")
     public ResponseEntity<Short> getFoundationYear(@PathVariable String teamName) {
         Team team = leagueService.findTeamByName(teamName); // Takımı bulmak için service çağrısı
         if (team == null) {
             return ResponseEntity.notFound().build(); // Takım bulunamazsa 404 döner
         }
         return ResponseEntity.ok(team.getFoundationYear()); // Kuruluş yılını döndür
+    }
+
+
+    @PostMapping("/startLeague/{leagueName}") // Yeni endpoint
+    public ResponseEntity<String> startLeague(@PathVariable String leagueName) {
+        try {
+            String result = leagueService.startLeague(leagueName); // LeagueService'ten çağır
+            return ResponseEntity.ok(result); // Sonucu döndür
+        } catch (SQLException e) {
+            return ResponseEntity.status(500).body("Error starting league: " + e.getMessage()); // Hata durumunda 500 döner
+        }
     }
 
 

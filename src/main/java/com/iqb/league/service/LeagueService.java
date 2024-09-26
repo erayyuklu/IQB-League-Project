@@ -15,10 +15,7 @@ import org.springframework.stereotype.Service;
 import java.sql.Connection;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class LeagueService {
@@ -460,6 +457,30 @@ public class LeagueService {
 
         return team; // Takım nesnesini döndür
     }
+
+    public String startLeague(String leagueName) throws SQLException {
+        TeamService teamService = new TeamService(connection);
+        List<TeamDTO> teamDTOs = teamService.takeTeams();
+        List<Team> teams = teamService.convertToTeams(teamDTOs);
+
+        // Create a league using the list of teams
+        League league = new League(teams, this); // 'this' kullanarak mevcut LeagueService örneğini geçir
+        league.setLeagueName(leagueName);
+        LeagueDTO leagueDTO = new LeagueDTO(leagueName);
+        int leagueId = saveLeagueDTOToDatabase(leagueDTO);
+        for (Team team : teams) {
+            teamService.IdMappingForTeamAndPoints(team, leagueId);
+        }
+
+        MatchService matchService = new MatchService(connection);
+        String APIMatchResults = matchService.do_matches(league);
+        List<DetailedTeamPointsDTO> detailedTeamPointsDTOS = teamService.convertToDetailedTeamPointsDTOs(teams);
+        teamService.saveDetailedTeamPointsDTOsToDatabase(detailedTeamPointsDTOS);
+        teamService.resetDetailedTeamPoints(teams);
+        return APIMatchResults;
+    }
+
+
 
 
 

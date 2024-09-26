@@ -79,7 +79,10 @@ public class Main {
                         mainApp.createFixtures();
                         break;
                     case 5:
-                        mainApp.startLeague();
+                        Scanner scanner2 = new Scanner(System.in);
+                        System.out.println("Give a name to the league (optional):");
+                        String leagueName= scanner2.nextLine();
+                        mainApp.startLeague(leagueName);
                         break;
                     case -1:
                         System.out.println("Exiting...");
@@ -167,17 +170,11 @@ public class Main {
 
 
 
-    private void startLeague() throws SQLException {
-        Scanner scanner = new Scanner(System.in);
+    public String startLeague(String leagueName) throws SQLException {
 
-        System.out.println("Give a name to the league (optional):");
-        String leagueName= scanner.nextLine();
         TeamService teamService = new TeamService(connection);
         List<TeamDTO> teamDTOs = teamService.takeTeams();
         List<Team> teams = teamService.convertToTeams(teamDTOs);
-
-
-
         // Create a league using the list of teams and the LeagueService instance
         League league = new League(teams, leagueService);
         league.setLeagueName(leagueName);
@@ -187,11 +184,12 @@ public class Main {
             teamService.IdMappingForTeamAndPoints(team, leagueId);
         }
 
-
         MatchService matchService = new MatchService(connection);
-        matchService.do_matches(league);
+        String APIMatchResults=matchService.do_matches(league);
+        System.out.println(APIMatchResults);
         List<DetailedTeamPointsDTO> detailedTeamPointsDTOS=teamService.convertToDetailedTeamPointsDTOs(teams);
         teamService.saveDetailedTeamPointsDTOsToDatabase(detailedTeamPointsDTOS);
         teamService.resetDetailedTeamPoints(teams);
+        return APIMatchResults;
     }
 }
