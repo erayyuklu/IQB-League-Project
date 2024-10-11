@@ -1,7 +1,4 @@
 package com.iqb.league.controller;
-
-
-import com.iqb.league.Main;
 import com.iqb.league.dto.DetailedTeamPointsDTO;
 import com.iqb.league.model.Team;
 import com.iqb.league.model.Color;
@@ -11,9 +8,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
-
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 
 @RestController
@@ -32,16 +29,8 @@ public class LeagueController {
         return ResponseEntity.ok(teams);
     }
 
-    @PostMapping("/teams/add/{name}/{foundationYear}/{colors}")
-    public ResponseEntity<?> addTeam(
-            @PathVariable String name,
-            @PathVariable short foundationYear,
-            @PathVariable String colors) {
-
-        String[] colorArray = colors.split("\\s*,\\s*");
-
-        TeamDTO teamDTO = new TeamDTO(name, foundationYear, colorArray);
-
+    @PostMapping(value = "/teams/add", consumes = "application/json")
+    public ResponseEntity<?> addTeam(@RequestBody TeamDTO teamDTO) {
         try {
             leagueService.addTeam(modelMapper, teamDTO);
             return ResponseEntity.ok("New team successfully added!");
@@ -50,24 +39,34 @@ public class LeagueController {
         }
     }
 
-    @DeleteMapping("/teams/delete/{teamId}")
-    public ResponseEntity<?> deleteTeam(@PathVariable int teamId) {
+
+    @DeleteMapping(value = "/teams/delete", consumes = "application/json")
+    public ResponseEntity<?> deleteTeam(@RequestBody Map<String, Integer> payload) {
+        int teamId = payload.get("teamId");
         leagueService.deleteTeam(teamId);
         return ResponseEntity.ok("Team successfully deleted.");
     }
 
-    @GetMapping("/teams/detailed_points/{leagueName}")
-    public ResponseEntity<List<DetailedTeamPointsDTO>> getTeamPointsByLeagueName(@PathVariable String leagueName) {
-        List<DetailedTeamPointsDTO> points = leagueService.getTeamPointsByLeagueName(leagueName);
+
+    @PostMapping(value="/teams/detailed_points", consumes = "application/json")
+    public ResponseEntity<List<DetailedTeamPointsDTO>> getTeamPointsByLeagueId(@RequestBody Map<String, Integer> payload) {
+        int leagueId = payload.get("league_id");
+        List<DetailedTeamPointsDTO> points = leagueService.getTeamPointsByLeagueId(leagueId);
+
         if (points.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(points);
     }
 
-    @GetMapping("/teams/detailed_points/{leagueName}/{teamName}/{statisticType}")
-    public ResponseEntity<Integer> getTeamStatistics(@PathVariable String leagueName, @PathVariable String teamName, @PathVariable String statisticType) {
-        Integer statisticValue = leagueService.getTeamStatistics(leagueName, teamName, statisticType);
+
+    @PostMapping(value="/teams/special_statistics", consumes = "application/json")
+    public ResponseEntity<Integer> getTeamStatistics(@RequestBody Map<String, Object> payload) {
+        int leagueId = (int) payload.get("leagueId");
+        int teamId = (int) payload.get("teamId");
+        String statisticType = (String) payload.get("statisticType");
+
+        Integer statisticValue = leagueService.getTeamStatistics(leagueId, teamId, statisticType);
 
         if (statisticValue == null) {
             return ResponseEntity.notFound().build(); // İstatistik bulunamazsa 404 döner
@@ -75,35 +74,47 @@ public class LeagueController {
         return ResponseEntity.ok(statisticValue);
     }
 
+
     @GetMapping("/fixtures")
     public ResponseEntity<String> getFixtures() {
         String fixtures = leagueService.createFixturesAPI();
         return ResponseEntity.ok(fixtures);
     }
-    @GetMapping("/teams/{teamName}/colors")
-    public ResponseEntity<List<String>> getTeamColors(@PathVariable String teamName) {
-        Team team = leagueService.findTeamByName(teamName); // Takımı bulmak için service çağrısı
+    @PostMapping(value="/teams/colors", consumes = "application/json")
+    public ResponseEntity<List<String>> getTeamColors(@RequestBody Map<String, Integer> payload) {
+        Integer teamId = payload.get("teamId"); // Body'den team_id'yi al
+
+        Team team = leagueService.findTeamById(teamId); // Takımı bulmak için service çağrısı
         if (team == null) {
             return ResponseEntity.notFound().build(); // Takım bulunamazsa 404 döner
         }
+
         List<String> colors = team.getColors().stream()
                 .map(Color::getColorName) // Renk isimlerini al
                 .toList();
+
         return ResponseEntity.ok(colors);
     }
 
-    @GetMapping("/teams/{teamName}/foundation_year")
-    public ResponseEntity<Short> getFoundationYear(@PathVariable String teamName) {
-        Team team = leagueService.findTeamByName(teamName); // Takımı bulmak için service çağrısı
+
+    @PostMapping(value="/teams/foundation_year", consumes = "application/json")
+    public ResponseEntity<Short> getFoundationYear(@RequestBody Map<String, Integer> payload) {
+        Integer teamId = payload.get("teamId"); // Body'den team_id'yi al
+
+        Team team = leagueService.findTeamById(teamId); // Takımı bulmak için service çağrısı
         if (team == null) {
             return ResponseEntity.notFound().build(); // Takım bulunamazsa 404 döner
         }
+
         return ResponseEntity.ok(team.getFoundationYear()); // Kuruluş yılını döndür
     }
 
 
-    @PostMapping("/startLeague/{leagueName}") // Yeni endpoint
-    public ResponseEntity<String> startLeague(@PathVariable String leagueName) {
+    @PostMapping(value="/start_league", consumes = "application/json")
+    public ResponseEntity<String> startLeague(@RequestBody Map<String, String> payload) {
+        String leagueName = payload.get("leagueName"); // Body'den leagueName'i al
+
+
         try {
             String result = leagueService.startLeague(leagueName); // LeagueService'ten çağır
             return ResponseEntity.ok(result); // Sonucu döndür
@@ -111,6 +122,7 @@ public class LeagueController {
             return ResponseEntity.status(500).body("Error starting league: " + e.getMessage()); // Hata durumunda 500 döner
         }
     }
+
 
 
 

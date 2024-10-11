@@ -294,22 +294,20 @@ public class LeagueService {
         return colorDTO.getId();
     }
 
-    public List<DetailedTeamPointsDTO> getTeamPointsByLeagueName(String leagueName) {
+    public List<DetailedTeamPointsDTO> getTeamPointsByLeagueId(int leagueId) {
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
         List<DetailedTeamPointsDTO> teamPointsList = new ArrayList<>();
-
 
         try {
             String sql = "SELECT dtp.team_id, dtp.goals_scored, dtp.goals_conceded, dtp.matches_won, " +
                     "dtp.matches_lost, dtp.matches_drawn, dtp.goal_difference, dtp.overall_score, dtp.league_id " +
                     "FROM public.detailed_team_points dtp " +
-                    "JOIN public.leagues l ON dtp.league_id = l.league_id " +
-                    "WHERE l.league_name = ? " +
+                    "WHERE dtp.league_id = ? " +
                     "ORDER BY dtp.team_id ASC";
 
             preparedStatement = connection.prepareStatement(sql);
-            preparedStatement.setString(1, leagueName);
+            preparedStatement.setInt(1, leagueId);
             resultSet = preparedStatement.executeQuery();
 
             System.out.println("Team ID | Goals Scored | Goals Conceded | Matches Won | Matches Lost | Matches Drawn | Goal Difference | Overall Score | League ID");
@@ -355,17 +353,16 @@ public class LeagueService {
         return teamPointsList;
     }
 
-    public Integer getTeamStatistics(String leagueName, String teamName, String statisticType) {
+
+    public Integer getTeamStatistics(int leagueId, int teamId, String statisticType) {
         Integer statisticValue = null;
         String sql = "SELECT dtp." + statisticType + " " +
                 "FROM public.detailed_team_points dtp " +
-                "JOIN public.teams t ON dtp.team_id = t.id " +
-                "JOIN public.leagues l ON dtp.league_id = l.league_id " +
-                "WHERE l.league_name = ? AND t.name = ?";
+                "WHERE dtp.league_id = ? AND dtp.team_id = ?";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, leagueName);
-            preparedStatement.setString(2, teamName);
+            preparedStatement.setInt(1, leagueId);
+            preparedStatement.setInt(2, teamId);
             ResultSet resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
@@ -377,6 +374,7 @@ public class LeagueService {
 
         return statisticValue;
     }
+
 
     public String createFixturesAPI() {
         TeamService teamService = new TeamService(connection);
@@ -420,16 +418,16 @@ public class LeagueService {
         return fixturesOutput.toString();
     }
 
-    public Team findTeamByName(String teamName) {
+    public Team findTeamById(int teamId) {
         Team team = null;
         String sql = "SELECT t.id, t.name, t.foundation_year, c.id AS color_id, c.color_name " +
                 "FROM public.teams t " +
                 "JOIN public.team_colors tc ON t.id = tc.team_id " +
                 "JOIN public.colors c ON tc.color_id = c.id " +
-                "WHERE t.name = ?";
+                "WHERE t.id = ?"; // t.name yerine t.id'yi kullanıyoruz
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, teamName);
+            preparedStatement.setInt(1, teamId); // teamName yerine teamId parametresini kullanıyoruz
             ResultSet resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
@@ -457,6 +455,7 @@ public class LeagueService {
 
         return team; // Takım nesnesini döndür
     }
+
 
     public String startLeague(String leagueName) throws SQLException {
         TeamService teamService = new TeamService(connection);
