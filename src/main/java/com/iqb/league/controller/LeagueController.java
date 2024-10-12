@@ -69,7 +69,7 @@ public class LeagueController {
         Integer statisticValue = leagueService.getTeamStatistics(leagueId, teamId, statisticType);
 
         if (statisticValue == null) {
-            return ResponseEntity.notFound().build(); // İstatistik bulunamazsa 404 döner
+            return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(statisticValue);
     }
@@ -82,15 +82,15 @@ public class LeagueController {
     }
     @PostMapping(value="/teams/colors", consumes = "application/json")
     public ResponseEntity<List<String>> getTeamColors(@RequestBody Map<String, Integer> payload) {
-        Integer teamId = payload.get("teamId"); // Body'den team_id'yi al
+        Integer teamId = payload.get("teamId");
 
-        Team team = leagueService.findTeamById(teamId); // Takımı bulmak için service çağrısı
+        Team team = leagueService.findTeamById(teamId);
         if (team == null) {
-            return ResponseEntity.notFound().build(); // Takım bulunamazsa 404 döner
+            return ResponseEntity.notFound().build();
         }
 
         List<String> colors = team.getColors().stream()
-                .map(Color::getColorName) // Renk isimlerini al
+                .map(Color::getColorName)
                 .toList();
 
         return ResponseEntity.ok(colors);
@@ -99,27 +99,27 @@ public class LeagueController {
 
     @PostMapping(value="/teams/foundation_year", consumes = "application/json")
     public ResponseEntity<Short> getFoundationYear(@RequestBody Map<String, Integer> payload) {
-        Integer teamId = payload.get("teamId"); // Body'den team_id'yi al
+        Integer teamId = payload.get("teamId");
 
-        Team team = leagueService.findTeamById(teamId); // Takımı bulmak için service çağrısı
+        Team team = leagueService.findTeamById(teamId);
         if (team == null) {
-            return ResponseEntity.notFound().build(); // Takım bulunamazsa 404 döner
+            return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.ok(team.getFoundationYear()); // Kuruluş yılını döndür
+        return ResponseEntity.ok(team.getFoundationYear());
     }
 
 
     @PostMapping(value="/start_league", consumes = "application/json")
     public ResponseEntity<String> startLeague(@RequestBody Map<String, String> payload) {
-        String leagueName = payload.get("leagueName"); // Body'den leagueName'i al
+        String leagueName = payload.get("leagueName");
 
 
         try {
-            String result = leagueService.startLeague(leagueName); // LeagueService'ten çağır
-            return ResponseEntity.ok(result); // Sonucu döndür
+            String result = leagueService.startLeague(leagueName);
+            return ResponseEntity.ok(result);
         } catch (SQLException e) {
-            return ResponseEntity.status(500).body("Error starting league: " + e.getMessage()); // Hata durumunda 500 döner
+            return ResponseEntity.status(500).body("Error starting league: " + e.getMessage());
         }
     }
 

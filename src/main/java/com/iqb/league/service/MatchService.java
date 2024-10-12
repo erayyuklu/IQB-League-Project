@@ -260,8 +260,8 @@ public class MatchService {
                 return resultSet.getInt("league_id");
             }
         } catch (SQLException e) {
-            e.printStackTrace(); // Hata yönetimi
+            e.printStackTrace();
         }
-        return null; // Lig bulunamazsa null döner
+        return null;
     }
 }

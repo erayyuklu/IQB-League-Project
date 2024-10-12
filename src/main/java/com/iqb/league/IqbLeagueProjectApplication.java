@@ -17,6 +17,6 @@ public class IqbLeagueProjectApplication {
 
     @Bean
     public Filter authenticationFilter() {
-        return new AuthenticationFilter(); // Filtreyi bean olarak kaydet
+        return new AuthenticationFilter();
     }
 }

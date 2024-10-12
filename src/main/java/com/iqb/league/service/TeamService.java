@@ -23,7 +23,7 @@ public class TeamService {
 
     private final Connection connection;
 
-    // Constructor: ModelMapper'ı MapperConfig'den al
+    // Constructor: take modelmappper from MapperConfig and connection from Spring
     @Autowired
     public TeamService(Connection connection) {
         this.connection = connection;
@@ -33,7 +33,7 @@ public class TeamService {
 
 
 
-    // Renkleri PostgreSQL'den String array olarak alıp Color nesnelerine dönüştüren yardımcı metot
+    // Helper method that takes colors from PostgreSQL as String array and converts them to Color objects
     private List<Color> getColors(int teamId, Connection connection) throws SQLException {
         List<Color> colors = new ArrayList<>();
         String sqlColors = "SELECT c.color_name FROM team_colors tc "
@@ -52,26 +52,26 @@ public class TeamService {
     }
 
 
-    // TeamDTO'ları Team nesnelerine çeviren metot
+    // methods that convert Teams to TeamDTOs
     public List<Team> convertToTeams(List<TeamDTO> teamDTOs) {
         return teamDTOs.stream()
-                .map(dto -> modelMapper.map(dto, Team.class)) // TeamDTO'dan Team'e dönüşüm
+                .map(dto -> modelMapper.map(dto, Team.class))
                 .collect(Collectors.toList());
     }
 
-    // Takım listesini kullanarak DetailedTeamPointsDTO'ya çeviren metot
+    // Method to convert team list to DetailedTeamPointsDTO list
     public List<DetailedTeamPointsDTO> convertToDetailedTeamPointsDTOs(List<Team> teams) {
         return teams.stream()
                 .map(team -> {
-                    DetailedTeamPoints detailedTeamPoints = team.getDetailedTeamPoints(); // Takımdan DetailedTeamPoints'i al
+                    DetailedTeamPoints detailedTeamPoints = team.getDetailedTeamPoints();
                     return modelMapper.map(detailedTeamPoints, DetailedTeamPointsDTO.class);
                 })
-                .filter(Objects::nonNull) // Null olanları filtrele
+                .filter(Objects::nonNull) // filter the null objects
                 .collect(Collectors.toList());
     }
 
 
-    // Takımları veritabanından alıp List<TeamDTO> olarak döndür
+    // Take teams from database and return List<TeamDTO>
     public List<TeamDTO> takeTeams() {
         List<TeamDTO> teamDTOs = new ArrayList<>();
         Connection connection = null;
@@ -149,9 +149,9 @@ public class TeamService {
                 preparedStatement.setInt(9, dto.getLeagueId());
                 preparedStatement.addBatch();
             }
-            preparedStatement.executeBatch(); // Tüm eklemeleri tek seferde gerçekleştir
+            preparedStatement.executeBatch(); // make all additions as a whole at once
         } catch (SQLException e) {
-            e.printStackTrace(); // Hata durumunda hata mesajını yazdır
+            e.printStackTrace();
         }
     }
 

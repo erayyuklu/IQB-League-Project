@@ -26,6 +26,8 @@ public class LeagueService {
     public LeagueService(Connection connection) {
         this.connection = connection;
     }
+
+    // Method to save a LeagueDTO to the database and return the ID
     public int saveLeagueDTOToDatabase(LeagueDTO leagueDTO) {
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
@@ -108,6 +110,7 @@ public class LeagueService {
         return rounds;
     }
 
+    // Method to generate second half fixtures based on the first half fixtures
     public List<List<Match>> generateSecondHalfFixtures(List<List<Match>> firstHalfFixtures) {
         List<List<Match>> secondHalfFixtures = new ArrayList<>();
 
@@ -123,6 +126,7 @@ public class LeagueService {
         return secondHalfFixtures;
     }
 
+    // Method to save detailed team points to the database
     public List<TeamDTO> showTeams(ModelMapper modelMapper) {
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
@@ -173,6 +177,7 @@ public class LeagueService {
         return teams;
     }
 
+    // Method to add a team to the database
     public void addTeam(ModelMapper modelMapper, TeamDTO teamDTO) {
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
@@ -220,6 +225,7 @@ public class LeagueService {
         }
     }
 
+    // Method to delete a team by ID
     public void deleteTeam(int teamId) {
         PreparedStatement preparedStatement = null;
 
@@ -253,6 +259,7 @@ public class LeagueService {
         }
     }
 
+    // Method to add a color to the database and return the ID
     public int addColor(String colorName, ModelMapper modelMapper) throws SQLException {
         PreparedStatement ps = null;
         ResultSet rs = null;
@@ -283,7 +290,6 @@ public class LeagueService {
 
                 if (rs.next()) {
                     colorDTO.setId(rs.getInt("id"));
-                    // Optionally, you can map back to DTO if needed
                     modelMapper.map(colorEntity, colorDTO);
                 }
             }
@@ -327,7 +333,7 @@ public class LeagueService {
 
                 teamPointsList.add(dto);
 
-                // Ekrana yazdırma
+
                 System.out.println(dto.getTeamId() + " | " +
                         dto.getGoalsScored() + " | " +
                         dto.getGoalsConceded() + " | " +
@@ -353,7 +359,7 @@ public class LeagueService {
         return teamPointsList;
     }
 
-
+    // Method to get team statistics by league ID, team ID, and statistic type
     public Integer getTeamStatistics(int leagueId, int teamId, String statisticType) {
         Integer statisticValue = null;
         String sql = "SELECT dtp." + statisticType + " " +
@@ -376,6 +382,7 @@ public class LeagueService {
     }
 
 
+    // Method to create fixtures and return them as a String
     public String createFixturesAPI() {
         TeamService teamService = new TeamService(connection);
         List<TeamDTO> teamDTOs = teamService.takeTeams();
@@ -424,28 +431,23 @@ public class LeagueService {
                 "FROM public.teams t " +
                 "JOIN public.team_colors tc ON t.id = tc.team_id " +
                 "JOIN public.colors c ON tc.color_id = c.id " +
-                "WHERE t.id = ?"; // t.name yerine t.id'yi kullanıyoruz
+                "WHERE t.id = ?";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setInt(1, teamId); // teamName yerine teamId parametresini kullanıyoruz
+            preparedStatement.setInt(1, teamId);
             ResultSet resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
-                // Takım bilgilerini al
                 int id = resultSet.getInt("id");
                 String name = resultSet.getString("name");
                 short foundationYear = resultSet.getShort("foundation_year");
 
-                // Renkleri al
                 List<Color> colors = new ArrayList<>();
                 do {
                     int colorId = resultSet.getInt("color_id");
                     String colorName = resultSet.getString("color_name");
-                    // Renk nesnesini oluştur ve listeye ekle
-                    colors.add(new Color(colorName)); // Color sınıfının uygun yapıcı metodunu kullanın
+                    colors.add(new Color(colorName));
                 } while (resultSet.next());
-
-                // Takım nesnesini oluştur
                 team = new Team(name, foundationYear, colors);
                 team.setId(id);
             }
@@ -453,7 +455,7 @@ public class LeagueService {
             e.printStackTrace();
         }
 
-        return team; // Takım nesnesini döndür
+        return team;
     }
 
 

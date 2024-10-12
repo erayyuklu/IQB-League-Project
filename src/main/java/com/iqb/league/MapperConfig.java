@@ -46,10 +46,10 @@ public class MapperConfig {
                                 .map(Color::new)
                                 .collect(Collectors.toList()) : null).map(source.getColors(), destination.getColors());
 
-                // DetailedTeamPoints'i manuel olarak set et
+
                 using((Converter<Void, DetailedTeamPoints>) context -> {
-                    return new DetailedTeamPoints();  // Varsayılan değerlerle yeni DetailedTeamPoints oluştur
-                }).map(source, destination.getDetailedTeamPoints()); // destination.setDetailedTeamPoints(new DetailedTeamPoints())
+                    return new DetailedTeamPoints();
+                }).map(source, destination.getDetailedTeamPoints());
             }
         });
 

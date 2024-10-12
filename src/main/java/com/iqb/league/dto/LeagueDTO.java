@@ -4,8 +4,8 @@ import lombok.Data;
 
 @Data
 public class LeagueDTO {
-    private int leagueId;       // Lig kimliği (PRIMARY KEY)
-    private String leagueName;  // Lig adı (NOT NULL)
+    private int leagueId;
+    private String leagueName;
 
     // Constructors
     public LeagueDTO() {

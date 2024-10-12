@@ -4,15 +4,15 @@ import lombok.Data;
 
 @Data
 public class DetailedTeamPoints {
-    private int teamId;           // Takım ID'si
-    private int goalsScored;      // Atılan gol sayısı
-    private int goalsConceded;    // Yenilen gol sayısı
-    private int matchesWon;       // Kazanılan maç sayısı
-    private int matchesLost;      // Kaybedilen maç sayısı
-    private int matchesDrawn;     // Berabere kalınan maç sayısı
-    private int goalDifference;   // Gol averajı
-    private int overallScore;    // Toplam puan
-    private int leagueId;         // Lig ID'si
+    private int teamId;
+    private int goalsScored;
+    private int goalsConceded;
+    private int matchesWon;
+    private int matchesLost;
+    private int matchesDrawn;
+    private int goalDifference;
+    private int overallScore;
+    private int leagueId;
 
     // Gol averajını güncelleyen metot
     public void updateGoalDifference() {

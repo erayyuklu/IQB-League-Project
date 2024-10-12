@@ -15,7 +15,7 @@ public class Color {
 
     @Override
     public String toString() {
-        return colorName; // Yalnızca renk ismini döndür
+        return colorName;
     }
 
 
